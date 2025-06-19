@@ -47,10 +47,6 @@ tmp/
 ehthumbs.db
 Thumbs.db
 
-# Documentation
-docs/docs.go
-docs/swagger.json
-docs/swagger.yaml
 
 # Logs
 *.log
@@ -59,8 +55,6 @@ logs/
 # Dependency directories
 vendor/
 
-# Air configuration
-.air.toml
 
 # Build artifacts
 dist/

@@ -11,7 +11,6 @@ import (
 	"github.com/centroidsol/todo-api/internal/database"
 	"github.com/centroidsol/todo-api/internal/middleware"
 	"github.com/centroidsol/todo-api/internal/routes"
-	_ "github.com/centroidsol/todo-api/docs" // Import generated docs
 
 	"github.com/gofiber/fiber/v2"
 )

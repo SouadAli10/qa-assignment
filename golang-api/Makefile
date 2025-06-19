@@ -25,12 +25,9 @@ run: build ## Build and run the application
 	@echo "Running $(APP_NAME)..."
 	@./$(BINARY_PATH)
 
-dev: ## Run with hot reload (requires air)
-	@if ! command -v air >/dev/null 2>&1; then \
-		echo "Installing air for hot reload..."; \
-		go install github.com/cosmtrek/air@latest; \
-	fi
-	@air
+dev: ## Run the application
+	@echo "Starting development server..."
+	@go run cmd/api/main.go
 
 test: ## Run tests
 	@echo "Running tests..."
@@ -56,7 +53,8 @@ docs: ## Generate swagger documentation
 		echo "Installing swag..."; \
 		go install github.com/swaggo/swag/cmd/swag@latest; \
 	fi
-	@swag init -g cmd/api/main.go -o docs/
+	@export PATH=$$(go env GOPATH)/bin:$$PATH; \
+	swag init -g cmd/api/main.go -o docs/
 	@echo "Documentation generated in docs/"
 
 lint: ## Run linter
@@ -117,7 +115,6 @@ seed: ## Seed database with sample data
 
 install-tools: ## Install development tools
 	@echo "Installing development tools..."
-	@go install github.com/cosmtrek/air@latest
 	@go install github.com/swaggo/swag/cmd/swag@latest
 	@go install golang.org/x/tools/cmd/goimports@latest
 

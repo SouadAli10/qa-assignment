@@ -23,7 +23,7 @@ func NewTodoHandler(service services.TodoService, logger *slog.Logger) *TodoHand
 
 // GetTodos godoc
 // @Summary Get all todos
-// @Description Get all todos with optional filtering, sorting, and pagination
+// @Description Get all todo items
 // @Tags todos
 // @Accept json
 // @Produce json
@@ -40,27 +40,27 @@ func NewTodoHandler(service services.TodoService, logger *slog.Logger) *TodoHand
 func (h *TodoHandler) GetTodos(c *fiber.Ctx) error {
 	// Parse query parameters
 	params := models.DefaultQueryParams()
-	
+
 	if page := c.QueryInt("page", 1); page > 0 {
 		params.Page = page
 	}
-	
+
 	if perPage := c.QueryInt("per_page", 20); perPage > 0 && perPage <= 100 {
 		params.PerPage = perPage
 	}
-	
+
 	if sort := c.Query("sort"); sort != "" {
 		params.Sort = sort
 	}
-	
+
 	if order := c.Query("order"); order != "" {
 		params.Order = order
 	}
-	
+
 	if search := c.Query("search"); search != "" {
 		params.Search = search
 	}
-	
+
 	if completedStr := c.Query("completed"); completedStr != "" {
 		if completed, err := strconv.ParseBool(completedStr); err == nil {
 			params.Completed = &completed
@@ -223,7 +223,7 @@ func (h *TodoHandler) DeleteTodo(c *fiber.Ctx) error {
 
 	if err := h.service.DeleteTodo(id); err != nil {
 		h.logger.Error("Failed to delete todo", "id", id, "error", err)
-		
+
 		// Check if it's a not found error
 		if err.Error() == "todo with id "+strconv.Itoa(id)+" not found" {
 			return c.Status(fiber.StatusNotFound).JSON(models.ErrorResponse{
@@ -231,7 +231,7 @@ func (h *TodoHandler) DeleteTodo(c *fiber.Ctx) error {
 				Code:  fiber.StatusNotFound,
 			})
 		}
-		
+
 		return c.Status(fiber.StatusInternalServerError).JSON(models.ErrorResponse{
 			Error: "Failed to delete todo",
 			Code:  fiber.StatusInternalServerError,

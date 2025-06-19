@@ -35,7 +35,7 @@ func Setup(app *fiber.App, db *database.Database, cfg *config.Config, logger *sl
 
 	// API routes
 	api := app.Group("/api")
-	
+
 	// Todo routes
 	todos := api.Group("/todos")
 	todos.Get("/stats", todoHandler.GetTodoStats) // Must be before /:id route
@@ -47,6 +47,13 @@ func Setup(app *fiber.App, db *database.Database, cfg *config.Config, logger *sl
 
 	// Swagger documentation (only in development)
 	if cfg.IsDevelopment() {
+		// Serve Swagger JSON spec
+		app.Get("/swagger/doc.json", func(c *fiber.Ctx) error {
+			c.Set("Content-Type", "application/json")
+			return c.SendFile("./docs/swagger.json")
+		})
+
+		// Serve Swagger UI
 		app.Get("/swagger/*", swagger.HandlerDefault)
 	}
 
