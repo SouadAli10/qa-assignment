@@ -137,6 +137,27 @@ async function todoRoutes(fastify, options) {
     preHandler: validateSchema(IdSchema, 'params')
   }, todoController.deleteTodo);
 
+  // Delete all todos
+  fastify.delete('/delete-all', {
+    schema: {
+      description: 'Delete all todo items',
+      tags: ['todos'],
+      response: {
+        204: {
+          description: 'All todos deleted successfully',
+          type: 'null'
+        },
+        500: {
+          description: 'Internal server error',
+          type: 'object',
+          properties: {
+            error: { type: 'string' }
+          }
+        }
+      }
+    }
+  }, todoController.deleteAllTodo);
+
   fastify.patch('/:id/toggle', {
     schema: {
       description: 'Toggle todo completion',

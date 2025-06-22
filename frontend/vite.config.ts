@@ -5,6 +5,10 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
+   server: {
+    host: true, // <--- THIS is the fix
+    port: 5173,
+  },
   plugins: [react()],
   test: {
     globals: true,

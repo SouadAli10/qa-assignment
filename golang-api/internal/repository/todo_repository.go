@@ -14,6 +14,7 @@ type TodoRepository interface {
 	Create(todo *models.Todo) error
 	Update(id int, updates map[string]interface{}) (*models.Todo, error)
 	Delete(id int) error
+	DeleteAll() error
 	Exists(id int) (bool, error)
 }
 
@@ -96,7 +97,7 @@ func (r *todoRepository) GetByID(id int) (*models.Todo, error) {
 		SELECT id, title, description, completed, created_at, updated_at 
 		FROM todos WHERE id = ?
 	`
-	
+
 	var todo models.Todo
 	err := r.db.QueryRow(query, id).Scan(
 		&todo.ID,
@@ -122,7 +123,7 @@ func (r *todoRepository) Create(todo *models.Todo) error {
 		INSERT INTO todos (title, description, completed) 
 		VALUES (?, ?, ?)
 	`
-	
+
 	result, err := r.db.Exec(query, todo.Title, todo.Description, todo.Completed)
 	if err != nil {
 		return fmt.Errorf("failed to create todo: %w", err)
@@ -151,18 +152,18 @@ func (r *todoRepository) Update(id int, updates map[string]interface{}) (*models
 	// Build dynamic update query
 	setParts := []string{}
 	args := []interface{}{}
-	
+
 	for field, value := range updates {
 		setParts = append(setParts, fmt.Sprintf("%s = ?", field))
 		args = append(args, value)
 	}
-	
+
 	// Add updated_at
 	setParts = append(setParts, "updated_at = CURRENT_TIMESTAMP")
-	
+
 	// Add id for WHERE clause
 	args = append(args, id)
-	
+
 	query := fmt.Sprintf(
 		"UPDATE todos SET %s WHERE id = ?",
 		strings.Join(setParts, ", "),
@@ -187,7 +188,7 @@ func (r *todoRepository) Update(id int, updates map[string]interface{}) (*models
 
 func (r *todoRepository) Delete(id int) error {
 	query := "DELETE FROM todos WHERE id = ?"
-	
+
 	result, err := r.db.Exec(query, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete todo: %w", err)
@@ -205,9 +206,31 @@ func (r *todoRepository) Delete(id int) error {
 	return nil
 }
 
+func (r *todoRepository) DeleteAll() error {
+	query := "DELETE FROM todos" // No WHERE clause means delete all rows
+
+	result, err := r.db.Exec(query)
+	if err != nil {
+		return fmt.Errorf("failed to delete all todos: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	// Optional: Log how many rows were deleted
+	// You could also skip this check if you don't need to know
+	if rowsAffected == 0 {
+		return fmt.Errorf("no todos found to delete")
+	}
+
+	return nil
+}
+
 func (r *todoRepository) Exists(id int) (bool, error) {
 	query := "SELECT EXISTS(SELECT 1 FROM todos WHERE id = ?)"
-	
+
 	var exists bool
 	err := r.db.QueryRow(query, id).Scan(&exists)
 	if err != nil {

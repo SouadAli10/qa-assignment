@@ -38,10 +38,11 @@ func Setup(app *fiber.App, db *database.Database, cfg *config.Config, logger *sl
 
 	// Todo routes
 	todos := api.Group("/todos")
-	todos.Get("/stats", todoHandler.GetTodoStats) // Must be before /:id route
+	todos.Get("/stats", todoHandler.GetTodoStats)
+	todos.Delete("/delete-all", todoHandler.DeleteAllTodos) // Explicit path first
 	todos.Get("/", todoHandler.GetTodos)
 	todos.Post("/", todoHandler.CreateTodo)
-	todos.Get("/:id", todoHandler.GetTodo)
+	todos.Get("/:id", todoHandler.GetTodo) // Dynamic routes last
 	todos.Put("/:id", todoHandler.UpdateTodo)
 	todos.Delete("/:id", todoHandler.DeleteTodo)
 

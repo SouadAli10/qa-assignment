@@ -241,6 +241,27 @@ func (h *TodoHandler) DeleteTodo(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
+// DeleteAllTodos godoc
+// @Summary Delete all todos
+// @Description Delete all todo items
+// @Tags todos
+// @Accept json
+// @Produce json
+// @Success 204
+// @Failure 500 {object} models.ErrorResponse
+// @Router /todos [delete]
+func (h *TodoHandler) DeleteAllTodos(c *fiber.Ctx) error {
+	if err := h.service.DeleteAllTodos(); err != nil {
+		h.logger.Error("Failed to delete all todos", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(models.ErrorResponse{
+			Error: "Failed to delete all todos",
+			Code:  fiber.StatusInternalServerError,
+		})
+	}
+
+	return c.SendStatus(fiber.StatusNoContent)
+}
+
 // GetTodoStats godoc
 // @Summary Get todo statistics
 // @Description Get statistics about todos (total, completed, pending)

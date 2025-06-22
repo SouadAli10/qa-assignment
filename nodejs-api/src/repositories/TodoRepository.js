@@ -268,6 +268,42 @@ export class TodoRepository {
     }
   }
 
+ /**
+   * Delete All todo
+   */
+  async deleteAll() {
+    try {
+      // Optional: Get count before deletion for logging
+      const countQuery = 'SELECT COUNT(*) as count FROM todos';
+      const countResult = await this.db.get(countQuery);
+      const initialCount = countResult.count;
+
+      if (initialCount === 0) {
+        logger.info('No todos to delete');
+        return { deletedCount: 0 };
+      }
+
+      const deleteQuery = 'DELETE FROM todos';
+      const result = await this.db.run(deleteQuery);
+
+      logger.info('Deleted all todos', { 
+        deletedCount: result.changes,
+        previousCount: initialCount
+      });
+
+      return { 
+        success: true,
+        deletedCount: result.changes,
+        previousCount: initialCount
+      };
+    } catch (error) {
+      logger.error('Failed to delete all todos', { 
+        error: error.message 
+      });
+      throw new DatabaseError('Failed to delete all todos', error);
+    }
+}
+
   /**
    * Check if todo exists
    */

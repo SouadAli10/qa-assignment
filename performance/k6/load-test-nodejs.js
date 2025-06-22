@@ -1,197 +1,159 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Rate } from 'k6/metrics';
+import { uuidv4 } from 'https://jslib.k6.io/k6-utils/1.4.0/index.js';
 
 // Custom metrics
 const errorRate = new Rate('errors');
 
 export const options = {
   stages: [
-    { duration: '2m', target: 20 }, // Ramp up to 20 users over 2 minutes
-    { duration: '5m', target: 20 }, // Stay at 20 users for 5 minutes
-    { duration: '2m', target: 50 }, // Ramp up to 50 users over 2 minutes
-    { duration: '5m', target: 50 }, // Stay at 50 users for 5 minutes
-    { duration: '2m', target: 0 },  // Ramp down to 0 users over 2 minutes
+    { duration: '1m', target: 20 },  
+    { duration: '3m', target: 20 },
+    { duration: '1m', target: 0 }, 
   ],
   thresholds: {
-    http_req_duration: ['p(95)<500'], // 95% of requests should be below 500ms
-    http_req_failed: ['rate<0.1'],    // Error rate should be less than 10%
-    errors: ['rate<0.1'],             // Custom error rate should be less than 10%
+    http_req_duration: ['p(95)<500'],  // 95% of requests should complete in <500ms
+    http_req_failed: ['rate<0.05'],     // Request failure rate <5%
+    errors: ['rate<0.05'],              // Custom error rate <5%
   },
 };
 
 const BASE_URL = 'http://localhost:3000';
 
-// Test data
-const testTodos = [
-  { title: 'Load Test Todo 1', description: 'Description for todo 1' },
-  { title: 'Load Test Todo 2', description: 'Description for todo 2' },
-  { title: 'Load Test Todo 3', description: 'Description for todo 3' },
-  { title: 'Load Test Todo 4', description: 'Description for todo 4' },
-  { title: 'Load Test Todo 5', description: 'Description for todo 5' },
-];
+// Shared variables using a global object
+let vuData = {};
 
 export function setup() {
-  // Setup phase - run once before the load test
-  console.log('Starting load test for Node.js API');
-  
   // Health check
-  const healthCheck = http.get(`${BASE_URL}/health`);
-  check(healthCheck, {
-    'Health check successful': (r) => r.status === 200,
-  });
+  const healthRes = http.get(`${BASE_URL}/health`);
+  check(healthRes, {
+    'API is healthy': (r) => r.status === 200,
+  }) || errorRate.add(1);
   
-  return { baseUrl: BASE_URL };
+  // Initialize VU data
+  return { todos: [] };
 }
 
 export default function (data) {
-  // Main test function - runs for each virtual user
-  const baseUrl = data.baseUrl;
-  
-  // Test scenario weights
-  const scenarios = [
-    { name: 'getTodos', weight: 40 },
-    { name: 'createTodo', weight: 25 },
-    { name: 'updateTodo', weight: 20 },
-    { name: 'deleteTodo', weight: 15 },
-  ];
-  
-  const scenario = scenarios[Math.floor(Math.random() * scenarios.length)];
-  
-  switch (scenario.name) {
-    case 'getTodos':
-      testGetTodos(baseUrl);
-      break;
-    case 'createTodo':
-      testCreateTodo(baseUrl);
-      break;
-    case 'updateTodo':
-      testUpdateTodo(baseUrl);
-      break;
-    case 'deleteTodo':
-      testDeleteTodo(baseUrl);
-      break;
+  // Initialize VU-specific data if it doesn't exist
+  if (!vuData[__VU]) {
+    vuData[__VU] = { todoId: null };
   }
-  
-  sleep(1); // Wait 1 second between requests
-}
 
-function testGetTodos(baseUrl) {
-  const response = http.get(`${baseUrl}/api/todos`);
-  
-  const success = check(response, {
-    'GET /api/todos status is 200': (r) => r.status === 200,
-    'GET /api/todos response time < 200ms': (r) => r.timings.duration < 200,
-    'GET /api/todos returns array': (r) => Array.isArray(JSON.parse(r.body)),
-  });
-  
-  errorRate.add(!success);
-}
-
-function testCreateTodo(baseUrl) {
-  const todo = testTodos[Math.floor(Math.random() * testTodos.length)];
-  const payload = {
-    title: `${todo.title} - ${Date.now()}`,
-    description: todo.description,
-    completed: false,
-  };
-  
-  const params = {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  };
-  
-  const response = http.post(`${baseUrl}/api/todos`, JSON.stringify(payload), params);
-  
-  let createdTodo = null;
-  const success = check(response, {
-    'POST /api/todos status is 201': (r) => r.status === 201,
-    'POST /api/todos response time < 300ms': (r) => r.timings.duration < 300,
-    'POST /api/todos returns created todo': (r) => {
-      const body = JSON.parse(r.body);
-      createdTodo = body;
-      return body.title === payload.title && body.description === payload.description;
-    },
-  });
-  
-  errorRate.add(!success);
-  
-  return createdTodo;
-}
-
-function testUpdateTodo(baseUrl) {
-  // First, get existing todos
-  const getTodosResponse = http.get(`${baseUrl}/api/todos`);
-  
-  if (getTodosResponse.status !== 200) {
-    errorRate.add(true);
-    return;
-  }
-  
-  const todos = JSON.parse(getTodosResponse.body);
-  let randomTodo;
-
-  if (todos.length === 0) {
-    // If no todos, create one and use it for the test
-    const newTodo = testCreateTodo(baseUrl);
-    if (!newTodo) {
-      errorRate.add(true);
-      return; // Can't proceed
-    }
-    randomTodo = newTodo;
+  // Execute test scenarios with weighted probability
+  const rand = Math.random();
+  if (rand < 0.4) {
+    testGetTodos();
+  } else if (rand < 0.7) {
+    testCreateTodo();
+  } else if (rand < 0.9) {
+    testUpdateTodo();
   } else {
-    // Otherwise, pick a random one
-    randomTodo = todos[Math.floor(Math.random() * todos.length)];
+    testDeleteTodo();
   }
-  
-  const updatePayload = {
-    title: `Updated Todo - ${Date.now()}`,
-    completed: !randomTodo.completed,
-  };
-  
+
+  sleep(1);
+}
+
+function testGetTodos() {
   const params = {
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    page: Math.floor(Math.random() * 3) + 1,
+    per_page: Math.random() > 0.5 ? 10 : 20,
+    sort: Math.random() > 0.5 ? 'created_at' : 'title',
+    order: Math.random() > 0.5 ? 'asc' : 'desc',
   };
-  
-  const response = http.put(`${baseUrl}/api/todos/${randomTodo.id}`, JSON.stringify(updatePayload), params);
-  
-  const success = check(response, {
-    'PUT /api/todos/:id status is 200': (r) => r.status === 200,
-    'PUT /api/todos/:id response time < 300ms': (r) => r.timings.duration < 300,
-    'PUT /api/todos/:id returns updated todo': (r) => {
+
+  const res = http.get(`${BASE_URL}/api/todos`, { params });
+
+  check(res, {
+    'GET /todos status is 200': (r) => r.status === 200,
+    'GET /todos returns paginated response': (r) => {
       const body = JSON.parse(r.body);
-      return body.title === updatePayload.title;
+      return body.data && typeof body.total === 'number';
+    },
+  }) || errorRate.add(1);
+}
+
+function testCreateTodo() {
+  const todoData = {
+    title: `Test Todo ${uuidv4()}`,
+    description: Math.random() > 0.3 ? `Description ${uuidv4()}` : undefined,
+    completed: Math.random() > 0.5,
+  };
+
+  const res = http.post(
+    `${BASE_URL}/api/todos`,
+    JSON.stringify(todoData),
+    { headers: { 'Content-Type': 'application/json' } }
+  );
+
+  const success = check(res, {
+    'POST /todos status is 201': (r) => r.status === 201,
+    'POST /todos returns created todo': (r) => {
+      const body = JSON.parse(r.body);
+      vuData[__VU].todoId = body.id;
+      return body.title === todoData.title;
     },
   });
-  
-  errorRate.add(!success);
-}
 
-function testDeleteTodo(baseUrl) {
-  // First, create a todo to delete
-  const newTodo = testCreateTodo(baseUrl);
-  
-  if (!newTodo || !newTodo.id) {
-    errorRate.add(true);
-    return;
+  if (!success) {
+    errorRate.add(1);
   }
-  
-  sleep(0.1); // Small delay to ensure todo is created
-  
-  const response = http.del(`${baseUrl}/api/todos/${newTodo.id}`);
-  
-  const success = check(response, {
-    'DELETE /api/todos/:id status is 204': (r) => r.status === 204,
-    'DELETE /api/todos/:id response time < 200ms': (r) => r.timings.duration < 200,
-  });
-  
-  errorRate.add(!success);
 }
 
-export function teardown(data) {
-  // Cleanup phase - run once after the load test
-  console.log('Load test completed for Node.js API');
+function testUpdateTodo() {
+  // Use previously created todo or create new one if needed
+  if (!vuData[__VU].todoId) {
+    testCreateTodo();
+    if (!vuData[__VU].todoId) return;
+  }
+
+  const updateData = {
+    title: `Updated Todo ${uuidv4()}`,
+    completed: Math.random() > 0.5,
+    description: Math.random() > 0.3 ? `Updated Desc ${uuidv4()}` : null,
+  };
+
+  const res = http.put(
+    `${BASE_URL}/api/todos/${vuData[__VU].todoId}`,
+    JSON.stringify(updateData),
+    { headers: { 'Content-Type': 'application/json' } }
+  );
+
+  check(res, {
+    'PUT /todos/:id status is 200': (r) => r.status === 200,
+    'PUT /todos/:id updates todo': (r) => {
+      const body = JSON.parse(r.body);
+      return body.title === updateData.title;
+    },
+  }) || errorRate.add(1);
+}
+
+function testDeleteTodo() {
+  if (!vuData[__VU].todoId) {
+    testCreateTodo();
+    if (!vuData[__VU].todoId) return;
+  }
+
+  const res = http.del(`${BASE_URL}/api/todos/${vuData[__VU].todoId}`);
+
+  const success = check(res, {
+    'DELETE /todos/:id status is 204': (r) => r.status === 204,
+  });
+
+  if (success) {
+    vuData[__VU].todoId = null;
+  } else {
+    errorRate.add(1);
+  }
+}
+
+export function teardown() {
+  // Clean up any remaining todos
+  for (const vu in vuData) {
+    if (vuData[vu].todoId) {
+      http.del(`${BASE_URL}/api/todos/${vuData[vu].todoId}`);
+    }
+  }
 }

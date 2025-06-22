@@ -145,6 +145,24 @@ export class TodoService {
     }
   }
 
+    /**
+   * Delete All todos
+   */
+  async deleteAllTodo() {
+    try {
+      logger.info('Deleting todo');
+
+      
+      await this.todoRepository.deleteAll();
+      
+      logger.info('Deleted todo successfully');
+      return true;
+    } catch (error) {
+      logger.error('Failed to delete todo', { error: error.message });
+      throw error;
+    }
+  }
+
   /**
    * Get todo statistics
    */

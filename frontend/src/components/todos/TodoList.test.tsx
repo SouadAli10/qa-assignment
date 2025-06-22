@@ -39,7 +39,8 @@ describe('TodoList', () => {
 
     render(<TodoList />, { wrapper });
 
-    expect(screen.getByRole('status')).toBeInTheDocument();
+    const skeletonElement = document.querySelector('[data-slot="skeleton"]');
+    expect(skeletonElement).toBeInTheDocument();
   });
 
   it('should render an error state', () => {

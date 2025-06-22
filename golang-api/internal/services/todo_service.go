@@ -16,6 +16,7 @@ type TodoService interface {
 	CreateTodo(req models.CreateTodoRequest) (*models.Todo, error)
 	UpdateTodo(id int, req models.UpdateTodoRequest) (*models.Todo, error)
 	DeleteTodo(id int) error
+	DeleteAllTodos() error
 	GetTodoStats() (map[string]interface{}, error)
 }
 
@@ -221,6 +222,18 @@ func (s *todoService) DeleteTodo(id int) error {
 	return nil
 }
 
+func (s *todoService) DeleteAllTodos() error {
+	s.logger.Info("Deleting all todos")
+
+	if err := s.repo.DeleteAll(); err != nil {
+		s.logger.Error("Failed to delete all todos", "error", err)
+		return fmt.Errorf("failed to delete all todos: %w", err)
+	}
+
+	s.logger.Info("Deleted all todos successfully")
+	return nil
+}
+
 func (s *todoService) GetTodoStats() (map[string]interface{}, error) {
 	s.logger.Info("Getting todo statistics")
 
@@ -238,7 +251,7 @@ func (s *todoService) GetTodoStats() (map[string]interface{}, error) {
 	}
 
 	todos := response.Data.([]models.Todo)
-	
+
 	stats := map[string]interface{}{
 		"total_todos":     response.Total,
 		"completed_todos": 0,

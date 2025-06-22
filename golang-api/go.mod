@@ -1,13 +1,17 @@
 module github.com/centroidsol/todo-api
 
-go 1.21
+go 1.23.0
+
+toolchain go1.23.10
 
 require (
 	github.com/gofiber/fiber/v2 v2.52.0
 	github.com/gofiber/swagger v1.0.0
 	github.com/joho/godotenv v1.5.1
 	github.com/mattn/go-sqlite3 v1.14.19
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.10.0
+	github.com/swaggo/swag v1.16.3
+	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b
 )
 
 require (
@@ -29,15 +33,15 @@ require (
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/swaggo/files/v2 v2.0.0 // indirect
-	github.com/swaggo/swag v1.16.3 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.51.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
-	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/sys v0.15.0 // indirect
-	golang.org/x/text v0.13.0 // indirect
-	golang.org/x/tools v0.7.0 // indirect
+	golang.org/x/net v0.41.0 // indirect
+	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/text v0.26.0 // indirect
+	golang.org/x/tools v0.34.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -42,6 +42,11 @@ export class TodoController {
     return reply.status(204).send();
   });
 
+  deleteAllTodo = asyncHandler(async (request, reply) => {
+    await this.todoService.deleteAllTodo();
+    return reply.status(204).send();
+  });
+
   // Get todo statistics
   getTodoStats = asyncHandler(async (request, reply) => {
     const stats = await this.todoService.getTodoStats();
