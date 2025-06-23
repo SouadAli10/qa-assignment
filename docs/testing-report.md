@@ -3,6 +3,15 @@ Executive Summary
 This report documents the findings from testing the Todo List API and its associated frontend application. The testing covered core functionality, security, performance, and user interface aspects. Several critical issues were identified along with implemented improvements.
 
 ## Critical Findings
+
+### Requirements  Consistency 
+Severity: High
+
+Finding: The requirements for testing is not consistent across different repo documents and FE message.
+
+Impact: We do not have a clear information what is actually needed 
+
+
 ### Authentication & Authorization Issues
 Severity: High
 
@@ -11,6 +20,15 @@ Finding: Login and user separation is not properly implemented in the current ve
 Impact: We do not have users so anyone using this app can see the other person's todos
 
 Recommendation: Implement proper user isolation with JWT verification and user-specific data filtering
+
+### Todo items prioritization
+Severity: High
+
+Finding: The requirements around todo prioritization are not implemented on the FE/BE
+
+Impact: We are not able to implement prioritization for todos 
+
+Recommendation: Implement proper prioritization for todos 
 
 ### Data Cleanup Implementation
 Action Taken: Added a "Delete All Todos" API endpoint
@@ -46,6 +64,13 @@ Symptoms:
 
 For completed when a user hovers the grey color does not highlight the entire word.
 
+### Form input caching
+Severity: Medium
+
+Finding: If a todo form is filled and saved if we click add todo again we get the information of the old todo prefilled
+
+
+
 ### Vite Configuration
 Issue: Encountered build problems with Vite configuration
 
@@ -76,7 +101,7 @@ Implemented frontend unit tests for critical components
 
 Performance Tests:
 
-Revised load and spike testing scenarios
+Revised load testing scenarios
 
 Implemented using k6 with realistic user patterns
 
@@ -84,22 +109,24 @@ Added monitoring for:
 
 Response times under load
 
-Error rates during spike tests
-
 System resource utilization
 
 ## Recommendations
-Priority 1: Implement proper user authentication and data separation
 
-Priority 2: Fix dark theme functionality and add visual regression tests
+Priority 1: Implement documentation pf requirements
 
-Priority 3: Enhance performance monitoring with:
+Priority 2: Implement proper user authentication and data separation
+
+Priority 3: Implement proper todo prioritization
+
+Priority 4: Fix dark theme functionality and add visual regression tests
+
+Priority 5: Enhance performance monitoring with:
 
 Automated alerts for degraded performance
 
 More realistic user behavior simulation
 
-Priority 4: Add end-to-end tests for critical user journeys
 
 ## Load Test Report: Node.js vs Golang API Performance
 Executive Summary
